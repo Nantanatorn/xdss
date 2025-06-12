@@ -134,8 +134,7 @@
 }
 
 .customer-management-table {
-	height: auto !important;
-	overflow-y: auto;
-	max-height: 100vh; /* หรือ fixed height */
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
 }
-

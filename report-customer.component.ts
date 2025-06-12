@@ -3,6 +3,7 @@ import {
 	ChangeDetectorRef,
 	Component,
 	effect,
+	ElementRef,
 	inject,
 	OnDestroy,
 	OnInit,
@@ -80,9 +81,9 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 	private readonly customGroupBody = viewChild<TemplateRef<HTMLTableCellElement>>('customGroupBody')
 	private readonly noteBody = viewChild<TemplateRef<HTMLTableCellElement>>('noteBody')
 	private readonly dateBody = viewChild<TemplateRef<HTMLTableCellElement>>('dateBody')
-
+	public dataTable: ElementRef
 	public columns: Go5TableStandardColumn[] = []
-
+	public hasMoreData = true
 	ngAfterViewInit(): void {
 		this.columns = [
 			{
@@ -96,7 +97,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				sortable: true,
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.customBody(),
-				isActive:true
+				isActive: true
 			},
 
 			{
@@ -110,7 +111,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				sortable: true,
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.stateBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'type',
@@ -123,7 +124,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				sortable: true,
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.typeBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'customerInterests.topicName',
@@ -136,7 +137,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				sortable: false,
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.interestBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'sourceOfLeadName',
@@ -148,7 +149,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				},
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.sourceBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'customerGroupName',
@@ -160,7 +161,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				},
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.customGroupBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'userFullname',
@@ -172,7 +173,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				},
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.ownerBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'note',
@@ -182,7 +183,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				sortable: true,
 				type: Go5TableStandardColumnType.Custom,
 				bodyTemplate: this.noteBody(),
-				isActive:true
+				isActive: true
 			},
 			{
 				id: 'dateAcquired',
@@ -191,27 +192,25 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 				header: { text: 'common_acquisition_date', align: 'start' },
 				sortable: true,
 				type: Go5TableStandardColumnType.Text,
-				topic:{
+				topic: {
 					fieldName: 'dateAcquired',
 					fieldType: Go5FieldType.Date,
 					dateFormat: DateFormat.dateLong
 				},
-				isActive:true
+				isActive: true
 			}
 		]
 
 		if (this.columns?.length > 0 && (!this.Reportdata || this.Reportdata.length === 0) && !this.loading) {
 			this.getData()
 		}
-
-		const container = document.querySelector('.customer-management-table'); 
+		const container = document.querySelector('.customer-management-table')
 
 		if (container) {
-			this.contentScrollElement = container as HTMLElement;
-			this.onScroll = this.onScroll.bind(this);
-			this.contentScrollElement.addEventListener('scroll', this.onScroll);
+			this.contentScrollElement = container as HTMLElement
+			this.onScroll = this.onScroll.bind(this)
+			this.contentScrollElement.addEventListener('scroll', this.onScroll)
 		}
-		
 	}
 	public customerStates = [
 		{ value: CustomerState.Lead, text: 'common_customer_lead' },
@@ -379,6 +378,8 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 	}
 
 	ngOnInit() {
+		window.addEventListener('scroll', this.onScroll.bind(this))
+
 		this.customerService
 			.GetSourceOfLead()
 			.toPromise()
@@ -428,6 +429,8 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 	}
 
 	ngOnDestroy() {
+		window.removeEventListener('scroll', this.onScroll.bind(this))
+
 		this.dataSubscription$?.unsubscribe()
 		this.currentFilterSubscription$?.unsubscribe()
 		this.currentDateFilterSubscription$?.unsubscribe()
@@ -437,7 +440,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 		}
 	}
 
-	public getData() {
+	public async getData() {
 		if (this.loadingCustomers) return
 		this.loadingCustomers = true
 		this.scrollLoading.set(true)
@@ -475,7 +478,7 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 						? item.customerOwnersStr.value.map((u) => u.pictureUrl)
 						: [],
 					note: item.notes,
-					dateAcquired: item.dateAcquired.value,
+					dateAcquired: item.dateAcquired.value
 				}
 
 				return mapped
@@ -485,9 +488,9 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 
 			this.loadingCustomers = false
 			this.scrollLoading.set(false)
+			this._cdr.detectChanges()
 			this.dataSubscription$?.unsubscribe()
 			this.dataSubscription$ = null
-			this._cdr.detectChanges()
 
 			AppConfig.OPEN_FN.next({ key: 'dialog', value: { httpStatusCode: res?.httpstatuscode } })
 		})
@@ -529,11 +532,12 @@ export class ReportCustomerComponent implements OnInit, OnDestroy, AfterViewInit
 	}
 
 	public onScroll(e) {
-	const element = e.target as HTMLElement;
-	const isNearBottom = element.scrollTop + element.offsetHeight >= element.scrollHeight - 100;
-	if (!this.loadingCustomers && !this.scrollLoading() && isNearBottom) {
-		this.getData();
-	}
+		const scrollPosition = window.pageYOffset + window.innerHeight
+		const pageHeight = document.documentElement.scrollHeight
+		const isNearBottom = scrollPosition >= pageHeight - 300
+		if (!this.loadingCustomers && !this.scrollLoading() && isNearBottom) {
+			this.getData()
+		}
 	}
 
 	exportData() {

@@ -37,13 +37,16 @@
 </div>
 
 <div #dataTable class="tb-report sales-order-report customer-management-table">
+	<ng-container>
 	<app-table-standard
-		#tableRef
 		[data]="Reportdata"
 		[columns]="columns"
 		[isLoading]="loadingCustomers"
 		(sorted)="sortingBy($event)"
+		(reachedBottom)="onScroll($event)"
 	/>
+</ng-container>
+
 </div>
 
 <ng-template #tbData let-data="dataList" let-export="export">
@@ -267,4 +270,3 @@
 		</ng-container>
 	</td>
 </ng-template>
-
